@@ -416,7 +416,12 @@ POS is the position we want to call parinfer."
 (defun parinfer--unsafe-p ()
   "If should prevent call parinfer absolutely."
   (or (bound-and-true-p multiple-cursors-mode)
-      (use-region-p)))
+      (use-region-p)
+      (and (eql #x20 (char-before))
+           (save-match-data
+             (looking-at
+              (rx (+ (syntax close-parenthesis))
+                  eol))))))
 
 (defun parinfer--clean-up ()
   "Parinfer do clean job.
