@@ -273,9 +273,10 @@ Clean up delay if exists."
 
 (defun parinfer--in-comment-or-string-p ()
   "Return if we are in comment or string."
-  (let ((f (get-text-property (point) 'face)))
-    (or (nth 3 (syntax-ppss))
-        (nth 4 (syntax-ppss))
+  (let ((f (get-text-property (point) 'face))
+        (ppss (syntax-ppss)))
+    (or (nth 3 ppss)
+        (nth 4 ppss)
         (eq f 'font-lock-comment-face)
         (eq f 'font-lock-comment-delimiter-face))))
 
