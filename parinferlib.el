@@ -2,7 +2,7 @@
 ;;
 ;; Author: Chris Oakman
 ;; Homepage: https://github.com/oakmac/parinfer-elisp
-;; Version: 1.1.0
+;; Version: 1.1.0kisaragi
 ;; Package-Requires: ((emacs "24.1"))
 ;; Keywords: parinfer, extensions
 ;;
@@ -183,10 +183,10 @@ A Stack Element has four fields: CH, INDENT-DELTA, LINE-NO, and X."
 ;;------------------------------------------------------------------------------
 
 (defconst parinferlib--err-messages
-  '((quote-danger . "Quotes must balanced inside comment blocks.")
-    (eol-backslash . "Line cannot end in a hanging backslash.")
-    (unclosed-quote . "String is missing a closing quote.")
-    (unclosed-paren . "Unmatched open-paren."))
+  '((quote-danger . "Quotes must be balanced inside comment blocks")
+    (eol-backslash . "Line cannot end in a hanging backslash")
+    (unclosed-quote . "String is missing a closing quote")
+    (unclosed-paren . "Unmatched open-paren"))
   "Alist mapping error symbols to error messages.")
 
 (defun parinferlib--cache-error-pos (error-name line-no x)
