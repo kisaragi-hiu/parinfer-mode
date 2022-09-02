@@ -219,9 +219,9 @@ Clean up delay if exists."
   "Report an error, described with MSG, that happened at LINE-NUMBER."
   (message
    (if line-number
-       (format "Parinfer: Error on line %d: \"%s\". Switching to Paren mode."
+       (format "Parinfer: Error on line %d: %s. Switching to Paren mode."
                line-number msg)
-     (format "Parinfer: Error: \"%s\". Switching to Paren mode."
+     (format "Parinfer: Error: %s. Switching to Paren mode."
              msg))))
 
 ;;;; Minor mode logic
