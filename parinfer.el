@@ -145,7 +145,7 @@ One argument for hook function, MODE present for the mode will be used.")
 (defvar-local parinfer--x-after-shift nil
   "Where the cursor x should be, after shift region.")
 
-;;;; Macros
+;;;; Helper macros
 
 (defmacro parinfer-silent (&rest body)
   "Run BODY with `message' silenced."
@@ -184,7 +184,7 @@ Clean up delay if exists."
      (setq parinfer--text-modified t)
      (parinfer--invoke-parinfer)))
 
-;;;; Helpers
+;;;; Helper functions
 
 (defun parinfer--reindent-sexp ()
   "Reindent current sexp."
@@ -215,7 +215,16 @@ Clean up delay if exists."
     (goto-char (point-max))
     (parinfer--in-string-p)))
 
-;;;; Extensions
+(defun parinfer--errmsg (line-number msg)
+  "Report an error, described with MSG, that happened at LINE-NUMBER."
+  (message
+   (if line-number
+       (format "Parinfer: Error on line %d: \"%s\". Switching to Paren mode."
+               line-number msg)
+     (format "Parinfer: Error: \"%s\". Switching to Paren mode."
+             msg))))
+
+;;;; Minor mode logic
 
 (defun parinfer--init ()
   "Init Parinfer Mode, switch to Paren firstly, then Indent."
@@ -226,15 +235,11 @@ Clean up delay if exists."
     (`changed
      (message
       (substitute-command-keys
-       (concat "Parinfer: Paren Mode, use \\[parinfer-toggle-mode] "
-               "to switch to Indent Mode."))))
+       (concat "Parinfer: Paren mode, use \\[parinfer-toggle-mode] "
+               "to switch to Indent mode."))))
     (`(error ,err)
-     (message
-      (concat "Parinfer: Error%s: \"%s\" - switch to Paren mode. "
-              "When error fixed, you can switch to indent mode.")
-      (if-let (line-no (plist-get err :line-no))
-          (format " on line %d" line-no)
-        "")
+     (parinfer--errmsg
+      (plist-get err :line-no)
       (plist-get err :message)))))
 
 (defun parinfer--indent-and-switch-to-indent-mode ()
@@ -663,19 +668,11 @@ If there's any change, display a confirm message in minibuffer."
     (cond
      ((not (plist-get result :success))
       (prog1 nil
-        (message
-         (concat
-          (if error-line-no
-              (format "Parinfer: Error on line %d: \"%s\" - switch to paren mode."
-                      error-line-no
-                      error-message)
-            (format "Parinfer: Error: \"%s\" - switch to paren mode."
-                    error-message))
-          "When error fixed, you can switch to indent mode."))))
+        (parinfer--errmsg error-line-no error-message)))
      ((and (not (plist-get result :changed-lines))
            (string= text (plist-get result :text)))
       t)
-     ((y-or-n-p "Parinfer: Switch to indent will modify this buffer, continue? ")
+     ((y-or-n-p "Parinfer: Switching to Indent will modify this buffer, continue? ")
       (progn
         (parinfer--apply-result result)
         (parinfer--goto-line orig-cursor-line)
@@ -695,7 +692,7 @@ major mode rules."
                (parinfer--auto-switch-indent-mode-p))
       (parinfer--switch-to-indent-mode))))
 
-;;;; Parinfer commands
+;;;; Commands
 
 (defun parinfer-untabify-buffer ()
   "Untabify whole buffer.
