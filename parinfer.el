@@ -41,10 +41,7 @@
 ;; License: GPLv3.
 
 ;;; Code:
-
-;; -----------------------------------------------------------------------------
-;; Requires
-;; -----------------------------------------------------------------------------
+;;;; Requires
 (require 'cl-lib)
 (require 'dash)
 (require 'mode-local)
@@ -57,9 +54,7 @@
 (require 'parinfer-ext)
 (require 'parinfer-strategies)
 
-;; -----------------------------------------------------------------------------
-;; Custom variables
-;; -----------------------------------------------------------------------------
+;;;; User options
 
 (defgroup parinfer nil
   "Parinfer."
@@ -127,9 +122,7 @@ One argument for hook function, MODE present for the mode will be used.")
 (defvar parinfer-after-execute-hook nil
   "Call after parinfer executed.")
 
-;; -----------------------------------------------------------------------------
-;; Internal variable and constants
-;; -----------------------------------------------------------------------------
+;;;; Internal variables and constants
 
 (defvar-local parinfer--mode 'paren
   "Parinfer mode style, 'paren or 'indent.")
@@ -152,9 +145,7 @@ One argument for hook function, MODE present for the mode will be used.")
 (defvar-local parinfer--x-after-shift nil
   "Where the cursor x should be, after shift region.")
 
-;; -----------------------------------------------------------------------------
-;; Macros
-;; -----------------------------------------------------------------------------
+;;;; Macros
 
 (defmacro parinfer-silent (&rest body)
   "Run BODY with `message' silenced."
@@ -193,9 +184,7 @@ Clean up delay if exists."
      (setq parinfer--text-modified t)
      (parinfer--invoke-parinfer)))
 
-;; -----------------------------------------------------------------------------
-;; Helpers
-;; -----------------------------------------------------------------------------
+;;;; Helpers
 
 (defun parinfer--reindent-sexp ()
   "Reindent current sexp."
@@ -706,9 +695,7 @@ major mode rules."
                (parinfer--auto-switch-indent-mode-p))
       (parinfer--switch-to-indent-mode))))
 
-;; -----------------------------------------------------------------------------
-;; Parinfer commands
-;; -----------------------------------------------------------------------------
+;;;; Parinfer commands
 
 (defun parinfer-untabify-buffer ()
   "Untabify whole buffer.
@@ -905,9 +892,7 @@ Use this to browse and apply the changes."
   (when (eq 'indent parinfer--mode)
     (parinfer--shift -1)))
 
-;; -----------------------------------------------------------------------------
-;; Keymaps
-;; -----------------------------------------------------------------------------
+;;;; Keymaps
 
 (defvar parinfer-mode-map
   (let ((map (make-sparse-keymap)))
@@ -930,9 +915,7 @@ Use this to browse and apply the changes."
     (define-key map [remap parinfer-toggle-mode] 'parinfer-region-mode-switch-mode)
     map))
 
-;; -----------------------------------------------------------------------------
-;; Mode
-;; -----------------------------------------------------------------------------
+;;;; Minor mode
 
 ;;;###autoload
 (define-minor-mode parinfer-mode
