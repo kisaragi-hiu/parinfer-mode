@@ -66,7 +66,8 @@ string."
   'kill-region
   'kill-word
   'newline-and-indent
-  'sp-insert-pair)
+  'sp-insert-pair
+  'evil-commentary)
 (parinfer-strategy-add :instantly
   'indent-for-tab-command
   'parinfer-double-quote
