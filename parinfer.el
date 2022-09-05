@@ -251,6 +251,7 @@ Clean up delay if exists."
 (defun parinfer--switch-to-indent-mode ()
   "Switch to indent mode."
   (setq parinfer--mode 'indent)
+  (setq parinfer-current-mode 'indent)
   (setq parinfer--first-load nil)
   (run-hook-with-args 'parinfer-switch-mode-hook 'indent)
   (parinfer--extension-lifecycle :indent)
@@ -261,6 +262,7 @@ Clean up delay if exists."
   (when parinfer--delay-timer
     (parinfer--clean-up))
   (setq parinfer--mode 'paren)
+  (setq parinfer-current-mode 'paren)
   (run-hook-with-args 'parinfer-switch-mode-hook 'paren)
   (parinfer--extension-lifecycle :paren)
   (force-mode-line-update))

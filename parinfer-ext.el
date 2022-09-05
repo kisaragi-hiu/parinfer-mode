@@ -29,6 +29,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'parinfer-strategies)
 
 (defvar parinfer-extensions
@@ -333,9 +334,9 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 (defun parinfer-smart-yank:yank ()
   "Yank behaviour depend on current mode(Indent/Paren)."
   (interactive)
-  (cl-case (parinfer-current-mode)
-    (indent (call-interactively 'parinfer-yank))
-    (paren (call-interactively 'parinfer-smart-yank:paren-yank))))
+  (cl-case parinfer--mode
+    ('indent (call-interactively 'parinfer-yank))
+    ('paren (call-interactively 'parinfer-smart-yank:paren-yank))))
 
 (parinfer-define-extension smart-yank
   "Yank depend on current mode."
@@ -450,7 +451,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 
 (defun parinfer-smart-tab:shift-right ()
   (interactive)
-  (if (eq 'indent (parinfer-current-mode))
+  (if (eq 'indent parinfer--mode)
       (progn
         (parinfer-smart-tab:active-line-region)
         (let* ((x-and-pos-list (parinfer-smart-tab:region-x-and-positions))
@@ -469,7 +470,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 
 (defun parinfer-smart-tab:shift-left ()
   (interactive)
-  (if (eq 'indent (parinfer-current-mode))
+  (if (eq 'indent parinfer--mode)
       (progn
         (parinfer-smart-tab:active-line-region)
         (let* ((x-and-pos-list (parinfer-smart-tab:region-x-and-positions))
