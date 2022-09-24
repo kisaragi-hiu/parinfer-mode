@@ -6,6 +6,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (defvar parinfer-strategies nil
   "Parinfer invoke strategy.
 
