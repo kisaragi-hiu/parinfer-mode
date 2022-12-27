@@ -1,6 +1,6 @@
 #+TITLE: Change Log
 
-* Unreleased
+* kisaragi-0.5.1
 
 - Fixed tabs breaking indent mode, now they are simply replaced with spaces
 - Fixed =parinfer--plist2alist= used before it is defined

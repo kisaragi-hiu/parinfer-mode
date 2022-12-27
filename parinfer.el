@@ -4,7 +4,7 @@
 
 ;; Author: Shi Tianshu
 ;; Homepage: https://github.com/DogLooksGood/parinfer-mode
-;; Version: kisaragi-0.5.0
+;; Version: kisaragi-0.5.1
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (cl-lib "0.5"))
 ;; Keywords: convenience, parinfer
 
