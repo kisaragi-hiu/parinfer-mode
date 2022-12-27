@@ -26,7 +26,7 @@ As I rely on this mode to do all my Lisp editing, I figured I might as well make
 >
 > — <https://shaunlebron.github.io/parinfer/>
 
-There are two modes, *Indent* and *Paren*. Indent mode allows you to edit indentation, while Parinfer automatically adjusts parens; Paren mode allows you to edit parens, while Parinfer automatically adjusts indentation.
+There are two modes (which I refer to as “states”), *Indent* and *Paren*. Indent state allows you to edit indentation, while Parinfer automatically adjusts parens; Paren state allows you to edit parens, while Parinfer automatically adjusts indentation.
 
 # Installation
 
@@ -41,11 +41,11 @@ Recommended configuration:
   :init
   (setq parinfer-extensions
         (list 'defaults       ; should be included.
-              'pretty-parens  ; different paren styles for different modes.
+              'pretty-parens  ; use paren style to highlight which state we're in.
               'lispy          ; If you use Lispy. With this extension, you should install Lispy and do not enable lispy-mode directly.
               'paredit        ; Bindings for Paredit commands
               'smart-tab      ; C-b & C-f jump positions and smart shift with tab & S-tab.
-              'smart-yank))   ; Yank behavior depend on mode.
+              'smart-yank))   ; state-dependent yank behavior.
   (add-hook 'clojure-mode-hook #'parinfer-mode)
   (add-hook 'scheme-mode-hook #'parinfer-mode)
   ;; Major modes run hooks of their entire ancestry. Adding this to
@@ -58,22 +58,22 @@ Recommended configuration:
     (add-hook 'lisp-mode-hook #'parinfer-mode))
   :config
   (define-key parinfer-mode-map
-    (kbd "C-,") #'parinfer-toggle-mode))
+    (kbd "C-,") #'parinfer-toggle-state))
 ```
 
 # Commands
 
-- `parinfer-toggle-mode`:   toggle between indent mode and paren mode
-- `parinfer-diff`:   show how switching to indent mode will modify the buffer
+- `parinfer-toggle-state`:   toggle between indent state and paren state
+- `parinfer-diff`:   show how switching to indent state will modify the buffer
 - `parinfer-auto-fix`:   manual trigger for auto adjustment of indentation for the whole buffer (when parens are balanced)
 
 # Configuration
 
-- `parinfer-auto-switch-indent-mode`{.verbatim}
+- `parinfer-change-to-indent-state-automatically`{.verbatim}
 
     Possible values: `nil`{.verbatim} (default), `t`{.verbatim}, `closing`{.verbatim}
 
-    Switch to indent mode whenever parens are balanced in paren mode.
+    Switch to indent state whenever parens are balanced in paren state.
 
     Set this to `closing`{.verbatim} to only do so after inserting a closing paren.
 
@@ -85,7 +85,7 @@ Recommended configuration:
 
 - `parinfer-lighters`{.verbatim} (default: `("Parinfer:Indent" . "Parinfer:Paren")`{.verbatim})
 
-    The mode line shows "Parinfer:Indent" when Parinfer is active in indent mode, "Parinfer:Paren" if it is in paren mode. The car is the indent mode string, while the cdr is the paren mode string.
+    The mode line shows "Parinfer:Indent" when Parinfer is active in indent state, "Parinfer:Paren" if it is in paren state. The car is the indent state string, while the cdr is the paren state string.
 
     There is no need to add the leading space. It is added automatically.
 
@@ -93,22 +93,22 @@ Recommended configuration:
 
     Enabled extensions.
 
-    An extension contains different pieces of code that run at different stages (entering indent mode, entering paren mode, enabling and disabling `parinfer-mode`{.verbatim}).
+    An extension contains different pieces of code that run at different stages (entering indent state, entering paren state, enabling and disabling `parinfer-mode`{.verbatim}).
 
     Possible extensions:
 
 | Extension     | Function                                                                                                             |
 |---------------|----------------------------------------------------------------------------------------------------------------------|
 | defaults      | Should be enabled, basic compatibility                                                                               |
-| pretty-parens | Dim parens in **Indent Mode**, use rainbow delimiters in **Paren Mode**                                              |
-| smart-yank    | Make yank (paste) preserve indentation in **Indent Mode** & preserve parens in **Paren Mode**                        |
+| pretty-parens | Dim parens in **Indent State**, use rainbow delimiters in **Paren State**                                              |
+| smart-yank    | Make yank (paste) preserve indentation in **Indent State** & preserve parens in **Paren State**                        |
 | smart-tab     | Make `C-f` & `C-b` on an empty line go to next/previous indentation, possibly inserting extra spaces in the process. |
 | paredit       | Introduce some paredit commands from paredit-mode.                                                                   |
 | lispy         | Integration with Lispy.                                                                                              |
 
 # Caveats
 
-`parinfer-mode` only works space-based indentation — tabs will always be replaced with spaces in indent mode.
+`parinfer-mode` only works space-based indentation — tabs will always be replaced with spaces in indent state.
 
 # License
 

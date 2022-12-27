@@ -631,7 +631,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 
 (defun parinfer-smart-tab:dwim-right-or-complete ()
   (interactive)
-  (if (eq 'paren parinfer--mode)
+  (if (eq 'paren parinfer--state)
       (if (bound-and-true-p company-mode)
           (company-indent-or-complete-common)
         (indent-according-to-mode))
@@ -655,7 +655,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 
 (defun parinfer-smart-tab:dwim-right ()
   (interactive)
-  (if (eq 'paren parinfer--mode)
+  (if (eq 'paren parinfer--state)
       (indent-according-to-mode)
     (cond
      ((region-active-p)
@@ -673,7 +673,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 
 (defun parinfer-smart-tab:dwim-left ()
   (interactive)
-  (when (eq 'indent parinfer--mode)
+  (when (eq 'indent parinfer--state)
     (cond
      ((region-active-p)
       (call-interactively 'parinfer-smart-tab:shift-left))

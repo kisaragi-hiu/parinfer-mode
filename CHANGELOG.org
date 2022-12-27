@@ -1,5 +1,24 @@
 #+TITLE: Change Log
 
+* Unreleased
+
+- Removed =parinfer-untabify-buffer=. Use built-in =untabify= instead, which does the same thing.
+- Change “mode” to “state”, sort of like Evil, to avoid clashing with Emacs's minor mode and major mode wording
+  - =parinfer-auto-switch-indent-mode= → =parinfer-change-to-indent-state-automatically=
+  - =parinfer--switch-to-indent-mode= → =parinfer--change-to-state=
+  - =parinfer--switch-to-paren-mode= → =parinfer--change-to-state=
+  - =parinfer-switch-mode-hook= → =parinfer-change-state-functions=
+  - =parinfer--mode= → =parinfer--state=
+  - =parinfer--invoke-parinfer-when-necessary= → =parinfer--invoke-if-necessary=
+  - =parinfer--invoke-parinfer= → =parinfer--invoke=
+  - =parinfer--invoke-parinfer-instantly= → =parinfer--invoke-immediately=
+  - =parinfer-toggle-mode= → =parinfer-toggle-state=
+  - =parinfer-region-mode-switch-mode= → =parinfer-region-mode-toggle-state=
+  - =parinfer--indent-and-switch-to-indent-mode= → removed (inlined into its only use)
+  - =parinfer--region-mode-enable= → removed in favor of using =parinfer-region-mode= directly
+  - =parinfer--region-mode-disable= → removed in favor of using =parinfer-region-mode= directly
+  - =parinfer--auto-switch-indent-mode-p= → =parinfer--auto-switch-to-indent-p=
+
 * kisaragi-0.5.1
 
 - Fixed tabs breaking indent mode, now they are simply replaced with spaces
