@@ -292,6 +292,14 @@ Clean up delay if exists."
        (buffer-substring-no-properties (line-beginning-position)
                                        (line-end-position)))))
 
+(defun parinfer--toplevel-line-p ()
+  "Return whether this line starts with a top-level statement."
+  ;; FIXME: this breaks for a toplevel quoted list (but not for a
+  ;; toplevel quasiquoted list).
+  (string-match-p "^[({\\[#`]" (buffer-substring-no-properties
+                                (line-beginning-position)
+                                (line-end-position))))
+
 (defun parinfer--goto-current-toplevel ()
   "Goto the beginning of current toplevel sexp."
   (back-to-indentation)
@@ -309,11 +317,6 @@ Clean up delay if exists."
     ;; we need consider the beginning of buffer as the begin of processing range.
     (when (eq prev-pos (point))
       (beginning-of-line))))
-
-(defun parinfer--toplevel-line-p ()
-  (string-match-p "^[({\\[#`]" (buffer-substring-no-properties
-                                (line-beginning-position)
-                                (line-end-position))))
 
 (defun parinfer--goto-next-toplevel ()
   "Goto the beggining of next toplevel sexp."
@@ -418,18 +421,17 @@ POS is the position we want to call parinfer."
                   eol))))))
 
 (defun parinfer--clean-up ()
-  "Parinfer do clean job.
-
-This will finish delay processing immediately."
+  "Clean up the delay timer and invoke parinfer immediately."
   (when parinfer--delay-timer
     (cancel-timer parinfer--delay-timer)
     (setq parinfer--delay-timer nil))
-  (parinfer--invoke-parinfer-instantly
-   (save-mark-and-excursion
-     (parinfer--goto-line parinfer--last-line-number)
-     (line-beginning-position))))
+  (let ((pos (save-mark-and-excursion
+               (parinfer--goto-line parinfer--last-line-number)
+               (line-beginning-position))))
+    (parinfer--invoke-parinfer-instantly pos)))
 
 (defun parinfer--comment-line-p ()
+  "Return whether the current line is a comment."
   (save-mark-and-excursion
     (back-to-indentation)
     (let ((f (get-text-property (point) 'face)))
