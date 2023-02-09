@@ -273,10 +273,10 @@ or indent."
   "Return if we are in comment or string."
   (let ((f (get-text-property (point) 'face))
         (ppss (syntax-ppss)))
-    (or (nth 3 ppss)
-        (nth 4 ppss)
-        (eq f 'font-lock-comment-face)
-        (eq f 'font-lock-comment-delimiter-face))))
+    (or (eq f 'font-lock-comment-face)
+        (eq f 'font-lock-comment-delimiter-face)
+        (nth 3 ppss)
+        (nth 4 ppss))))
 
 (defun parinfer--in-string-p ()
   "Return if we are in string."
@@ -336,10 +336,10 @@ or indent."
                 (setq found t))
             (progn
               (back-to-indentation)
-              (if (and (not (or (parinfer--in-comment-or-string-p)
-                                (parinfer--empty-line-p)))
-                       (eq (point) (line-beginning-position))
-                       (parinfer--toplevel-line-p))
+              (if (and (eq (point) (line-beginning-position))
+                       (parinfer--toplevel-line-p)
+                       (not (or (parinfer--empty-line-p)
+                                (parinfer--in-comment-or-string-p))))
                   (progn
                     (beginning-of-line)
                     (setq found t))
@@ -445,9 +445,9 @@ POS is the position we want to call parinfer."
       (and (string-match-p "^;+.*$" (buffer-substring-no-properties (point) (line-end-position)))
            (save-mark-and-excursion
              (end-of-line)
-             (or (nth 4 (syntax-ppss))
-                 (eq f 'font-lock-comment-face)
-                 (eq f 'font-lock-comment-delimiter-face)))))))
+             (or (eq f 'font-lock-comment-face)
+                 (eq f 'font-lock-comment-delimiter-face)
+                 (nth 4 (syntax-ppss))))))))
 
 (defun parinfer--invoke-if-necessary ()
   "Invoke parinfer when necessary.
