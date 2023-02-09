@@ -152,6 +152,9 @@ yet.")
 (defvar-local parinfer--region-shifted nil
   "If shift the region after mark activate.")
 
+(defvar-local parinfer--ppss nil
+  "Used as a cache for `syntax-ppss' output.")
+
 ;;;; Helper macros
 
 (defmacro parinfer-silent (&rest body)
@@ -272,7 +275,7 @@ or indent."
 (defun parinfer--in-comment-or-string-p ()
   "Return if we are in comment or string."
   (let ((f (get-text-property (point) 'face))
-        (ppss (syntax-ppss)))
+        (ppss (or parinfer--ppss (syntax-ppss))))
     (or (eq f 'font-lock-comment-face)
         (eq f 'font-lock-comment-delimiter-face)
         (nth 3 ppss)
@@ -280,7 +283,7 @@ or indent."
 
 (defun parinfer--in-string-p ()
   "Return if we are in string."
-  (nth 3 (syntax-ppss)))
+  (nth 3 (or parinfer--ppss (syntax-ppss))))
 
 (defun parinfer--goto-line (n)
   "Goto the beginning of line N."
@@ -447,7 +450,7 @@ POS is the position we want to call parinfer."
              (end-of-line)
              (or (eq f 'font-lock-comment-face)
                  (eq f 'font-lock-comment-delimiter-face)
-                 (nth 4 (syntax-ppss))))))))
+                 (nth 4 (or parinfer--ppss (syntax-ppss)))))))))
 
 (defun parinfer--invoke-if-necessary ()
   "Invoke parinfer when necessary.
@@ -463,22 +466,23 @@ This is the entry point function added to `post-command-hook'."
   (when (and this-command (symbolp this-command))
     (if (parinfer--should-clean-up-p)
         (parinfer--clean-up)
-      (unless (or (parinfer-strategy-match-p this-command :skip)
-                  (parinfer--in-comment-or-string-p)
-                  (parinfer--unfinished-string-p))
-        (cond
-         ((parinfer-strategy-match-p this-command :instantly)
-          (parinfer--invoke-immediately (point)))
-         ((parinfer-strategy-match-p this-command :shift-right)
-          (let ((parinfer--state 'indent))
-            (parinfer-readjust-paren))
-          (save-excursion
-            (beginning-of-line)
-            (parinfer-readjust-indent)))
-         ((parinfer-strategy-match-p this-command :default)
-          (parinfer--invoke (point))
-          (unless (parinfer--in-string-p)
-            (setq parinfer--text-modified t))))))))
+      (let ((parinfer--ppss (syntax-ppss)))
+        (unless (or (parinfer-strategy-match-p this-command :skip)
+                    (parinfer--in-comment-or-string-p)
+                    (parinfer--unfinished-string-p))
+          (cond
+           ((parinfer-strategy-match-p this-command :instantly)
+            (parinfer--invoke-immediately (point)))
+           ((parinfer-strategy-match-p this-command :shift-right)
+            (let ((parinfer--state 'indent))
+              (parinfer-readjust-paren))
+            (save-excursion
+              (beginning-of-line)
+              (parinfer-readjust-indent)))
+           ((parinfer-strategy-match-p this-command :default)
+            (parinfer--invoke (point))
+            (unless (parinfer--in-string-p)
+              (setq parinfer--text-modified t)))))))))
 
 (defun parinfer--active-line-region ()
   "Auto adjust region so that the shift can work properly."
