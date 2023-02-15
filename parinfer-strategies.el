@@ -8,15 +8,14 @@
 
 (require 'cl-lib)
 
-(defvar parinfer-strategies nil
+(defvar parinfer-strategies (make-hash-table)
   "Parinfer invoke strategy.
 
 Use `parinfer-strategy-add' to mark functions as using a
-particular strategy. Use `parinfer-strategy-parse' to read
-values.
+particular strategy.
 
-This is a plist with values being the commands, and keys being
-the following:
+This is a hash table with values being the commands, and keys
+being the following:
 
  strategy name    Description
  --------------   -------------------------------------------
@@ -28,27 +27,18 @@ the following:
 The values are either symbols or regexp strings that are used to
 match commands.")
 
-(defun parinfer-strategy-parse (strategy)
-  "Return commands in `parinfer-strategies' matching STRATEGY.
-
-Return a plist like:
-
- (:commands cmd1 cmd2 cmd3
-  :regexps regexp1 regexp2 regexp3)"
-  (let ((lst (plist-get parinfer-strategies strategy)))
-    (list :commands (cl-remove-if-not #'symbolp lst)
-          :regexps  (cl-remove-if-not #'stringp lst))))
-
 (defun parinfer-strategy-add (strategy &rest commands)
   "Append new commands to STRATEGY in `parinfer-strategy'.
 
 COMMANDS is a list of commands, which may be a symbol or a regexp
 string."
   (declare (indent 1))
+  (unless (hash-table-p parinfer-strategies)
+    (setq parinfer-strategies (make-hash-table)))
   (dolist (cmd commands)
     (cl-pushnew
      cmd
-     (plist-get parinfer-strategies strategy)
+     (gethash strategy parinfer-strategies)
      :test #'equal)))
 
 (parinfer-strategy-add :default
@@ -104,16 +94,21 @@ string."
   'evil-scroll-page-down
   'evil-scroll-up)
 
-(defun parinfer-strategy-match-p (command strategy-name)
-  "Return non-nil if COMMAND's parinfer invoke strategy is STRATEGY-NAME."
-  (let* ((output (parinfer-strategy-parse strategy-name))
-         (cmds (plist-get output :commands))
-         (regexps (plist-get output :regexps)))
-    (or (member command cmds)
+(defun parinfer-strategy-match-p (command strategy)
+  "Return non-nil if COMMAND's parinfer invoke strategy is STRATEGY."
+  (let ((cmds (gethash strategy parinfer-strategies)))
+    (or (memq command cmds)
         (cl-some (lambda (regexp)
-                   (string-match-p
-                    regexp (symbol-name command)))
-                 regexps))))
+                   (and (stringp regexp)
+                        (string-match-p regexp
+                                        (symbol-name command))))
+                 cmds))))
+        ;; (and (eq strategy :default)
+        ;;      (seq-every-p
+        ;;       (lambda (key)
+        ;;         (not (parinfer-strategy-match-p command key)))
+        ;;       (remq :default
+        ;;             (hash-table-keys parinfer-strategies)))))))
 
 (provide 'parinfer-strategies)
 
