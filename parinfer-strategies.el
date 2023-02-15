@@ -49,6 +49,7 @@ string."
   'evil-shift-right-line)
 (parinfer-strategy-add :default
   "paredit-"
+  "evil-ex-"
   'comment-dwim
   'comment-line
   'comment-or-uncomment-region
