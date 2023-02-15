@@ -272,6 +272,31 @@ or indent."
     (parinfer--extension-lifecycle kw)
     (force-mode-line-update)))
 
+(defun parinfer--last-change-involves-newline ()
+  "Check if the last change has a newline."
+  (unless
+      ;; No undo information recorded
+      (eq buffer-undo-list t)
+    (let ((undo-list buffer-undo-list))
+      ;; remove consecutive boundrary markers
+      (while (and undo-list (not (car undo-list)))
+        (pop undo-list))
+      (cl-loop
+       for x in undo-list
+       with str = nil
+       if (or (not x) (not (consp x))) return nil
+
+       ;; insertion between A and B
+       if (and (integerp (car x))
+               (integerp (cdr x)))
+       do (setq str (buffer-substring-no-properties (car x) (cdr x)))
+
+       ;; deletion of A (at B)
+       if (stringp (car x)) do (setq str (car x))
+
+       if (and str (string-match-p "\n" str)) return t
+       else do (setq str nil)))))
+
 (defun parinfer--in-comment-or-string-p ()
   "Return if we are in comment or string."
   (let ((f (get-text-property (point) 'face))
@@ -468,7 +493,24 @@ This is the entry point function added to `post-command-hook'."
         (parinfer--clean-up)
       (let ((parinfer--ppss (syntax-ppss)))
         (unless (or (parinfer-strategy-match-p this-command :skip)
-                    (parinfer--in-comment-or-string-p)
+                    ;; This fixes pasting code starting with comments
+                    ;; not triggering a paren adjust.
+                    ;;
+                    ;; If there is a newline, we take that as a signal
+                    ;; that there might be code following the comment
+                    ;; that needs readjustment.
+                    ;;
+                    ;; No newline + in a comment = should inhibit
+                    ;; running.
+                    (and (not (parinfer--last-change-involves-newline))
+                         (parinfer--in-comment-or-string-p))
+                    ;; Still, try not to run if we're in a string.
+                    ;;
+                    ;; The reason why comments are different is
+                    ;; because the starting point of a comment is in
+                    ;; the comment while the starting point of a
+                    ;; string is not in the string.
+                    (parinfer--in-string-p)
                     (parinfer--unfinished-string-p))
           (cond
            ((parinfer-strategy-match-p this-command :instantly)

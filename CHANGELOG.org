@@ -2,6 +2,7 @@
 
 * Unreleased
 
+- Fix paren readjustment (in indent state) not running when pasting code that starts with a comment.
 - Removed =parinfer-untabify-buffer=. Use built-in =untabify= instead, which does the same thing.
 - Change “mode” to “state”, sort of like Evil, to avoid clashing with Emacs's minor mode and major mode wording
   - =parinfer-auto-switch-indent-mode= → =parinfer-change-to-indent-state-automatically=
