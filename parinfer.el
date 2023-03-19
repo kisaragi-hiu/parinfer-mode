@@ -477,6 +477,28 @@ POS is the position we want to call parinfer."
                  (eq f 'font-lock-comment-delimiter-face)
                  (nth 4 (or parinfer--ppss (syntax-ppss)))))))))
 
+(defun parinfer--should-invoke? ()
+  "Is it necessary to invoke parinfer?"
+  (and (not (parinfer-strategy-match-p this-command :skip))
+       ;; This fixes pasting code starting with comments
+       ;; not triggering a paren adjust.
+       ;;
+       ;; If there is a newline, we take that as a signal
+       ;; that there might be code following the comment
+       ;; that needs readjustment.
+       ;;
+       ;; Has newline or not in a comment = should run
+       (or (parinfer--last-change-involves-newline)
+           (not (parinfer--in-comment-or-string-p)))
+       ;; Still, try not to run if we're in a string.
+       ;;
+       ;; The reason why comments are different is
+       ;; because the starting point of a comment is in
+       ;; the comment while the starting point of a
+       ;; string is not in the string.
+       (not (parinfer--in-string-p))
+       (not (parinfer--unfinished-string-p))))
+
 (defun parinfer--invoke-if-necessary ()
   "Invoke parinfer when necessary.
 
@@ -492,26 +514,7 @@ This is the entry point function added to `post-command-hook'."
     (if (parinfer--should-clean-up-p)
         (parinfer--clean-up)
       (let ((parinfer--ppss (syntax-ppss)))
-        (unless (or (parinfer-strategy-match-p this-command :skip)
-                    ;; This fixes pasting code starting with comments
-                    ;; not triggering a paren adjust.
-                    ;;
-                    ;; If there is a newline, we take that as a signal
-                    ;; that there might be code following the comment
-                    ;; that needs readjustment.
-                    ;;
-                    ;; No newline + in a comment = should inhibit
-                    ;; running.
-                    (and (not (parinfer--last-change-involves-newline))
-                         (parinfer--in-comment-or-string-p))
-                    ;; Still, try not to run if we're in a string.
-                    ;;
-                    ;; The reason why comments are different is
-                    ;; because the starting point of a comment is in
-                    ;; the comment while the starting point of a
-                    ;; string is not in the string.
-                    (parinfer--in-string-p)
-                    (parinfer--unfinished-string-p))
+        (when (parinfer--should-invoke?)
           (cond
            ((parinfer-strategy-match-p this-command :instantly)
             (parinfer--invoke-immediately (point)))
@@ -524,7 +527,10 @@ This is the entry point function added to `post-command-hook'."
            ((parinfer-strategy-match-p this-command :default)
             (parinfer--invoke (point))
             (unless (parinfer--in-string-p)
-              (setq parinfer--text-modified t)))))))))
+              (setq parinfer--text-modified t)))
+           ;; Do nothing for everything else
+           ;; (despite the name of the "default" strategy)
+           (t nil)))))))
 
 (defun parinfer--active-line-region ()
   "Auto adjust region so that the shift can work properly."
@@ -637,7 +643,7 @@ after `parinfer-delay-invoke-idle' seconds of idle time."
         (if (and parinfer-display-error err)
             (let ((err-line (+ (line-number-at-pos start)
                                (plist-get err :line-no))))
-              (message "Parinfer error:%s at line: %s column:%s"
+              (message "Parinfer error: %s at line: %s column:%s"
                        (plist-get err :message)
                        err-line
                        (save-mark-and-excursion
@@ -981,6 +987,35 @@ this mode."
             (forward-char parinfer--x-after-shift))))
       (setq parinfer--region-shifted nil)
       (setq parinfer--x-after-shift nil))))
+
+;;;; Debug mode
+(defvar parinfer-debug nil)
+(defun parinfer--debug (fmt &rest args)
+  "Send a message in debug mode.
+FMT and ARGS are like `message'."
+  (when parinfer-debug
+    (apply #'message fmt args)))
+(cl-defmacro parinfer--add-debug-advice (symbol &key expected)
+  "Add a debug advice on SYMBOL.
+The advice sends a debug message if its return value is not
+`equal' to EXPECTED."
+  (let ((advice-name (intern (format "parinfer---advice-%s" symbol))))
+    `(prog1 (defun ,advice-name
+                (func &rest args)
+              ,(format "Advice as added by `parinfer--add-debug-advice.'
+Calls FUNC with ARGS and returns it; a debug message is sent if
+the value is not %S."
+                       expected)
+              (let ((result (apply func args)))
+                (prog1 result
+                  (unless (equal result ,expected)
+                    (parinfer--debug "%s: %s (%s)"
+                                     this-command
+                                     result
+                                     ',symbol)))))
+       (advice-add ',symbol :around ',advice-name))))
+(parinfer--add-debug-advice parinfer--unsafe-p :expected nil)
+(parinfer--add-debug-advice parinfer--should-invoke? :expected t)
 
 (provide 'parinfer)
 ;;; parinfer.el ends here
