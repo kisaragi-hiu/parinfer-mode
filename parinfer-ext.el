@@ -30,27 +30,15 @@
 ;;; Code:
 
 (require 'parinfer-strategies)
-
-(defvar parinfer-extensions
-  '(defaults pretty-parens smart-yank)
-  "Parinfer extensions, which will be enabled when run parinfer.")
-
-(defconst parinfer--extension-prefix "parinfer-ext::"
-  "The prefix of parinfer extensions.")
+(require 'parinfer-utils)
 
 ;; -----------------------------------------------------------------------------
 ;; Definition
 ;; -----------------------------------------------------------------------------
 
-(defun parinfer--plist2alist (plist)
-  "Convert a property PLIST to an association list."
-  (let (key output)
-    (dolist (x plist)
-      (if (keywordp x)
-          (progn (setq key x)
-                 (push (list key) output))
-        (push `(,@(assq key output) ,x) output)))
-    output))
+(eval-and-compile
+  (defconst parinfer--extension-prefix "parinfer-ext::"
+    "The prefix of parinfer extensions."))
 
 (defmacro parinfer-define-extension (name doc-str &rest clauses)
   "Define an extension.
@@ -71,15 +59,24 @@ CLAUSES are the code for lifecycle.
   (declare (indent 1) (doc-string 2))
   (let* ((alist (parinfer--plist2alist clauses))
          (keys (delete-dups (mapcar #'car alist)))
-         (name-str (symbol-name name))
-         clause)
-    `(defun ,(intern (concat parinfer--extension-prefix name-str))
-         (lifecycle)
-       ,doc-str
-       (cond
-        ,@(cl-loop for key in keys
-                   collect `((eq lifecycle ,key)
-                             ,@(cdr (assq key alist))))))))
+         (name-str (symbol-name name)))
+    `(progn
+       (let* ((type (get 'parinfer-extensions 'custom-type))
+              oldval newval)
+         (if (eq 'symbol (cadr type))
+             (setq newval '((const ,name)))
+           (setq oldval (cdadr type))
+           (setq newval (cons '(const ,name) oldval)))
+         (put 'parinfer-extensions
+              'custom-type
+              `(repeat (choice ,@newval))))
+       (defun ,(intern (concat parinfer--extension-prefix name-str))
+           (lifecycle)
+         ,doc-str
+         (cond
+          ,@(cl-loop for key in keys
+                     collect `((eq lifecycle ,key)
+                               ,@(cdr (assq key alist)))))))))
 
 (defun parinfer--extension-funcall (extension lifecycle)
   "For specified EXTENSION, call its LIFECYCLE function."

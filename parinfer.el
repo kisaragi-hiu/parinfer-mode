@@ -4,7 +4,7 @@
 
 ;; Author: Shi Tianshu
 ;; Homepage: https://github.com/DogLooksGood/parinfer-mode
-;; Version: kisaragi-0.5.1
+;; Version: 0.6.0
 ;; Package-Requires: ((emacs "25.1") (dash "2.13.0") (cl-lib "0.5"))
 ;; Keywords: convenience, parinfer
 
@@ -51,6 +51,7 @@
 
 ;; Internal
 (require 'parinferlib)
+(require 'parinfer-utils)
 (require 'parinfer-ext)
 (require 'parinfer-strategies)
 
@@ -111,6 +112,12 @@ characters have been changed."
   :group 'parinfer
   :type 'boolean)
 
+(defcustom parinfer-extensions
+  '(defaults pretty-parens smart-yank)
+  "Parinfer extensions, which will be enabled when run parinfer."
+  :group 'parinfer
+  :type '(repeat symbol))
+
 (defvar parinfer-mode-enable-hook nil
   "Called after `parinfer-mode' is enabled.")
 
@@ -156,49 +163,6 @@ yet.")
   "Used as a cache for `syntax-ppss' output.")
 
 ;;;; Helper macros
-
-(defmacro parinfer--defcmd
-    (name arglist &optional docstring &rest body)
-  "Define a Parinfer command called NAME.
-NAME, ARGLIST, DOCSTRING, and BODY are passed to `defun'.
-
-The defined command is marked as belonging to `parinfer-mode'. An
-`interactive' form can still be used as the first element of
-BODY; the spec is passed along, but its MODES would be
-discarded."
-  (declare (doc-string 3) (indent 2))
-  (let ((before nil)
-        (spec nil))
-    ;; Handle docstring, declaration, and body arguments
-    (progn
-      ;; ("docstring")
-      (when (and (stringp docstring)
-                 (not body))
-        (setq body (list docstring)
-              docstring nil))
-      ;; ((declare) ,@body)
-      ;; ("docstring" ,@body)
-      (when (or (stringp docstring)
-                (eq 'declare (car-safe docstring)))
-        (setq before (list docstring)))
-      ;; ("docstring" (declare) ,@rest)
-      (when (and (stringp docstring)
-                 (eq 'declare (car-safe (car body))))
-        (setq before (list docstring (car body))
-              body (cdr body)))
-      ;; (,@body)
-      (unless before
-        (setq body (cons docstring body))))
-    ;; Passing in spec with an extra interactive form
-    (when (eq 'interactive (car-safe (car body)))
-      (setq spec (elt (car body) 1))
-      (setq body (cdr body)))
-    `(defun ,name ,arglist
-       ,@before
-       ,@(if (version< emacs-version "28")
-             `((interactive))
-           `((interactive ,spec parinfer-mode)))
-       ,@body)))
 
 (defmacro parinfer-silent (&rest body)
   "Run BODY with `message' silenced."
