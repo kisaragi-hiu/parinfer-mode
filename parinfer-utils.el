@@ -49,6 +49,11 @@ discarded."
            `((interactive ,spec parinfer-mode)))
        ,@body)))
 
+(defmacro parinfer-silent (&rest body)
+  "Run BODY with `message' silenced."
+  `(cl-letf (((symbol-function 'message) #'format))
+     ,@body))
+
 (defun parinfer--plist2alist (plist)
   "Convert a property PLIST to an association list."
   (let (key output)

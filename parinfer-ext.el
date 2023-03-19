@@ -32,6 +32,35 @@
 (require 'parinfer-strategies)
 (require 'parinfer-utils)
 
+;;;; Work around dependency loop
+(defvar parinfer--delay-timer)
+(defvar parinfer--region-shifted)
+(defvar parinfer--state)
+(defvar parinfer--x-after-shift)
+(defvar parinfer-extensions)
+(defvar parinfer-mode-map)
+(defvar parinfer-region-mode-map)
+
+(declare-function parinfer--clean-up "parinfer")
+(declare-function parinfer--comment-line-p "parinfer")
+(declare-function parinfer--empty-line-p "parinfer")
+(declare-function parinfer--goto-line "parinfer" (n))
+(declare-function parinfer--goto-previous-toplevel "parinfer")
+(declare-function parinfer--in-comment-or-string-p "parinfer")
+(declare-function parinfer--reindent-sexp "parinfer")
+(declare-function parinfer-do "parinfer" (&rest body))
+(declare-function parinfer-paren-run "parinfer" (&rest body))
+(declare-function parinfer-readjust-paren "parinfer" (&optional delay))
+(declare-function parinfer-readjust-paren-buffer "parinfer")
+
+;;;; Mark external stuff
+(declare-function company-complete-common "company")
+(declare-function company-indent-or-complete-common "company" (arg))
+
+(declare-function lispy-define-key "lispy" (keymap key def &rest plist))
+(declare-function rainbow-delimiters-mode-enable "rainbow-delimiters")
+(declare-function rainbow-delimiters-mode-disable "rainbow-delimiters")
+
 ;; -----------------------------------------------------------------------------
 ;; Definition
 ;; -----------------------------------------------------------------------------
@@ -324,7 +353,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 
 (parinfer--defcmd parinfer-smart-yank:yank ()
   "Yank behaviour depend on current mode(Indent/Paren)."
-  (cl-case (parinfer-current-mode)
+  (cl-case parinfer--state
     (indent (call-interactively 'parinfer-yank))
     (paren (call-interactively 'parinfer-smart-yank:paren-yank))))
 
@@ -438,7 +467,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
     (setq deactivate-mark nil)))
 
 (parinfer--defcmd parinfer-smart-tab:shift-right ()
-  (if (eq 'indent (parinfer-current-mode))
+  (if (eq 'indent parinfer--state)
       (progn
         (parinfer-smart-tab:active-line-region)
         (let* ((x-and-pos-list (parinfer-smart-tab:region-x-and-positions))
@@ -456,7 +485,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
       (parinfer--reindent-sexp))))
 
 (parinfer--defcmd parinfer-smart-tab:shift-left ()
-  (if (eq 'indent (parinfer-current-mode))
+  (if (eq 'indent parinfer--state)
       (progn
         (parinfer-smart-tab:active-line-region)
         (let* ((x-and-pos-list (parinfer-smart-tab:region-x-and-positions))
@@ -615,7 +644,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 (parinfer--defcmd parinfer-smart-tab:dwim-right-or-complete ()
   (if (eq 'paren parinfer--state)
       (if (bound-and-true-p company-mode)
-          (company-indent-or-complete-common)
+          (call-interactively #'company-indent-or-complete-common)
         (indent-according-to-mode))
     (cond
      ((region-active-p)

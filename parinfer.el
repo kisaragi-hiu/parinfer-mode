@@ -164,11 +164,6 @@ yet.")
 
 ;;;; Helper macros
 
-(defmacro parinfer-silent (&rest body)
-  "Run BODY with `message' silenced."
-  `(cl-letf (((symbol-function 'message) #'format))
-     ,@body))
-
 (defmacro parinfer-paren-run (&rest body)
   "Run BODY in paren state, ensuring indentation is correct afterwards."
   (let ((toggle (make-symbol "toggle")))
