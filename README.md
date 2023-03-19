@@ -108,7 +108,7 @@ Recommended configuration:
 
 # Caveats
 
-`parinfer-mode` only works space-based indentation — tabs will always be replaced with spaces in indent state.
+`parinfer-mode` only works with space-based indentation — tabs will always be replaced with spaces in indent state.
 
 # License
 

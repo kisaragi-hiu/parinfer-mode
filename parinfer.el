@@ -157,6 +157,49 @@ yet.")
 
 ;;;; Helper macros
 
+(defmacro parinfer--defcmd
+    (name arglist &optional docstring &rest body)
+  "Define a Parinfer command called NAME.
+NAME, ARGLIST, DOCSTRING, and BODY are passed to `defun'.
+
+The defined command is marked as belonging to `parinfer-mode'. An
+`interactive' form can still be used as the first element of
+BODY; the spec is passed along, but its MODES would be
+discarded."
+  (declare (doc-string 3) (indent 2))
+  (let ((before nil)
+        (spec nil))
+    ;; Handle docstring, declaration, and body arguments
+    (progn
+      ;; ("docstring")
+      (when (and (stringp docstring)
+                 (not body))
+        (setq body (list docstring)
+              docstring nil))
+      ;; ((declare) ,@body)
+      ;; ("docstring" ,@body)
+      (when (or (stringp docstring)
+                (eq 'declare (car-safe docstring)))
+        (setq before (list docstring)))
+      ;; ("docstring" (declare) ,@rest)
+      (when (and (stringp docstring)
+                 (eq 'declare (car-safe (car body))))
+        (setq before (list docstring (car body))
+              body (cdr body)))
+      ;; (,@body)
+      (unless before
+        (setq body (cons docstring body))))
+    ;; Passing in spec with an extra interactive form
+    (when (eq 'interactive (car-safe (car body)))
+      (setq spec (elt (car body) 1))
+      (setq body (cdr body)))
+    `(defun ,name ,arglist
+       ,@before
+       ,@(if (version< emacs-version "28")
+             `((interactive))
+           `((interactive ,spec parinfer-mode)))
+       ,@body)))
+
 (defmacro parinfer-silent (&rest body)
   "Run BODY with `message' silenced."
   `(cl-letf (((symbol-function 'message) #'format))
@@ -199,7 +242,6 @@ Clean up delay if exists."
 
 (defun parinfer--reindent-sexp ()
   "Reindent current sexp."
-  (interactive)
   (parinfer-silent
    (when (not (parinfer--in-comment-or-string-p))
      (let ((p (point-marker)))
@@ -691,11 +733,10 @@ parinferlib returned an error."
            'changed)
           (t 'unchanged))))
 
-(defun parinfer-readjust-paren-with-confirm ()
+(parinfer--defcmd parinfer-readjust-paren-with-confirm ()
   "Call parinfer indent on whole buffer.
 
 If there's any change, display a confirm message in minibuffer."
-  (interactive)
   (let* ((window-start-pos (window-start))
          (orig-cursor-line (line-number-at-pos))
          (text (buffer-substring-no-properties (point-min) (point-max)))
@@ -735,9 +776,8 @@ major mode rules."
 
 ;;;; Commands
 
-(defun parinfer-auto-fix ()
+(parinfer--defcmd parinfer-auto-fix ()
   "Reindent the entire buffer then readjust parens."
-  (interactive)
   (untabify (point-min) (point-max))
   (dolist (cmd '(mark-whole-buffer
                  indent-region
@@ -745,16 +785,14 @@ major mode rules."
     (call-interactively cmd))
   (parinfer-readjust-paren-buffer))
 
-(defun parinfer-ediff-quit ()
-  "Quit ‘parinfer-diff’ directly, without confirm."
-  (interactive)
+(parinfer--defcmd parinfer-ediff-quit ()
+  "Quit `parinfer-diff' directly, without confirm."
   (ediff-really-quit nil)
   (with-current-buffer "*Parinfer Result*"
     (kill-buffer-and-window)))
 
-(defun parinfer-backward-delete-char ()
+(parinfer--defcmd parinfer-backward-delete-char ()
   "Replacement in command ‘parinfer-mode’ for ‘backward-delete-char’ command."
-  (interactive)
   (if (eq 'paren parinfer--state)
       (parinfer-run
        (if (string-match-p "^[[:space:]]+$"
@@ -769,88 +807,75 @@ major mode rules."
           (setq parinfer--text-modified nil)
         (parinfer--invoke)))))
 
-(defun parinfer-backward-kill-word ()
+(parinfer--defcmd parinfer-backward-kill-word ()
   "Replacement in symbol 'parinfer-mode' for 'backward-kill-word' command."
-  (interactive)
   (parinfer-run
    (call-interactively 'backward-kill-word)))
 
-(defun parinfer-delete-char ()
+(parinfer--defcmd parinfer-delete-char ()
   "Replacement in 'parinfer-mode' for 'delete-char' command."
-  (interactive)
   (parinfer-run
    (delete-char 1)))
 
-(defun parinfer-kill-word ()
+(parinfer--defcmd parinfer-kill-word ()
   "Replacement in 'parinfer-mode' for 'kill-word' command."
-  (interactive)
   (parinfer-run
    (call-interactively 'kill-word)))
 
-(defun parinfer-kill-line ()
+(parinfer--defcmd parinfer-kill-line ()
   "Replacement in 'parinfer-mode' for 'kill-line' command."
-  (interactive)
   (parinfer-run
    (call-interactively 'kill-line)))
 
-(defun parinfer-delete-indentation ()
+(parinfer--defcmd parinfer-delete-indentation ()
   "Replacement in 'parinfer-mode' for 'delete-indentation' command."
-  (interactive)
   (parinfer-paren-run
    (call-interactively 'delete-indentation)))
 
-(defun parinfer-raise-sexp ()
+(parinfer--defcmd parinfer-raise-sexp ()
   "Raise sexp and Indent code."
-  (interactive)
   (call-interactively 'raise-sexp)
   (parinfer--reindent-sexp))
 
-(defun parinfer-region-delete-region ()
+(parinfer--defcmd parinfer-region-delete-region ()
   "Delete region then invoke parinfer afterwards."
-  (interactive)
   (parinfer-run
    (call-interactively 'delete-region)
    (deactivate-mark t)))
 
-(defun parinfer-yank ()
+(parinfer--defcmd parinfer-yank ()
   "`yank', then reindent the buffer."
-  (interactive)
   (call-interactively 'yank)
   (setq parinfer--text-modified t)
   (parinfer-readjust-paren-buffer))
 
-(defun parinfer-mouse-drag-region ()
+(parinfer--defcmd parinfer-mouse-drag-region ()
   "Should do clean up if it is needed."
-  (interactive)
   (when parinfer--delay-timer
     (parinfer--clean-up))
   (call-interactively 'mouse-drag-region))
 
-(defun parinfer-kill-region ()
+(parinfer--defcmd parinfer-kill-region ()
   "Replacement in 'parinfer-mode' for 'kill-region' command."
-  (interactive)
   (parinfer-run
    (call-interactively 'kill-region)))
 
-(defun parinfer-newline ()
+(parinfer--defcmd parinfer-newline ()
   "Replacement in 'parinfer-mode' for 'newline' command."
-  (interactive)
   (parinfer-do
    (call-interactively 'newline)))
 
-(defun parinfer-semicolon ()
+(parinfer--defcmd parinfer-semicolon ()
   "Insert semicolon, always indent after insertion.
 
 This is the very special situation, since we always need
 invoke parinfer after every semicolon input."
-  (interactive)
   (call-interactively 'self-insert-command)
   (parinfer-readjust-paren t)
   (setq parinfer--text-modified t))
 
-(defun parinfer-double-quote ()
+(parinfer--defcmd parinfer-double-quote ()
   "Insert a pair of quotes, or a single quote after backslash."
-  (interactive)
   (cond
    ;; insert just one quote after backslash
    ((= (char-before) ?\\)
@@ -875,9 +900,8 @@ invoke parinfer after every semicolon input."
       (forward-char -1))
     (forward-char -1))))
 
-(defun parinfer-toggle-state ()
+(parinfer--defcmd parinfer-toggle-state ()
   "Toggle Parinfer between indent state and paren state."
-  (interactive)
   (cond ((eq 'indent parinfer--state)
          (parinfer--change-to-state 'paren))
         ((or (not parinfer--first-load)
@@ -892,10 +916,9 @@ invoke parinfer after every semicolon input."
          (when (parinfer-readjust-paren-with-confirm)
            (parinfer--change-to-state 'indent)))))
 
-(defun parinfer-diff ()
+(parinfer--defcmd parinfer-diff ()
   "Diff current code and the code after readjusting parens in Ediff.
 Use this to browse and apply the changes."
-  (interactive)
   (let* ((orig-text (buffer-substring-no-properties (point-min) (point-max)))
          (new-buffer (generate-new-buffer "*Parinfer Result*"))
          (orig-buffer (current-buffer))
@@ -907,22 +930,19 @@ Use this to browse and apply the changes."
       (funcall m)
       (ediff-buffers orig-buffer new-buffer '(parinfer--ediff-init-keys)))))
 
-(defun parinfer-region-mode-toggle-state ()
+(parinfer--defcmd parinfer-region-mode-toggle-state ()
   "Show a user error.
 
 The state cannot be changed while the region is active."
-  (interactive)
   (user-error "Parinfer: Cannot change state when region is active"))
 
-(defun parinfer-shift-right ()
+(parinfer--defcmd parinfer-shift-right ()
   "In indent state with region active, shift text left."
-  (interactive)
   (when (eq 'indent parinfer--state)
     (parinfer--shift 1)))
 
-(defun parinfer-shift-left ()
+(parinfer--defcmd parinfer-shift-left ()
   "In indent state with region active, shift text left."
-  (interactive)
   (when (eq 'indent parinfer--state)
     (parinfer--shift -1)))
 

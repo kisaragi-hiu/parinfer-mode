@@ -195,8 +195,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 ;; lispy
 ;; -----------------------------------------------------------------------------
 
-(defun parinfer-lispy:space ()
-  (interactive)
+(parinfer--defcmd parinfer-lispy:space ()
   (if (or (eq (point) (line-beginning-position))
           (eq (point) (line-end-position)))
       (call-interactively 'self-insert-command)
@@ -205,14 +204,12 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
       (when (parinfer-lispy:paren-left-and-between-parens-p)
         (backward-char)))))
 
-(defun parinfer-lispy:forward ()
-  (interactive)
+(parinfer--defcmd parinfer-lispy:forward ()
   (when parinfer--delay-timer
     (parinfer--clean-up))
   (call-interactively 'lispy-forward))
 
-(defun parinfer-lispy:backward ()
-  (interactive)
+(parinfer--defcmd parinfer-lispy:backward ()
   (when parinfer--delay-timer
     (parinfer--clean-up))
   (call-interactively 'lispy-backward))
@@ -222,8 +219,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
       (eq c 91)
       (eq c 123)))
 
-(defun parinfer-lispy:newline ()
-  (interactive)
+(parinfer--defcmd parinfer-lispy:newline ()
   (parinfer-do
    (call-interactively 'newline-and-indent)))
 
@@ -234,19 +230,19 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
          (parinfer-lispy:paren-char-p ca)
          (parinfer-lispy:paren-char-p cb))))
 
-(defun parinfer-lispy:parens (arg)
+(parinfer--defcmd parinfer-lispy:parens (arg)
   (interactive "P")
   (if (or (region-active-p) arg)
       (call-interactively 'lispy-parens)
     (call-interactively 'self-insert-command)))
 
-(defun parinfer-lispy:brackets (arg)
+(parinfer--defcmd parinfer-lispy:brackets (arg)
   (interactive "P")
   (if (or (region-active-p) arg)
       (call-interactively 'lispy-brackets)
     (call-interactively 'self-insert-command)))
 
-(defun parinfer-lispy:braces (arg)
+(parinfer--defcmd parinfer-lispy:braces (arg)
   (interactive "P")
   (if (or (region-active-p) arg)
       (call-interactively 'lispy-braces)
@@ -316,8 +312,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 ;; Smart yank
 ;; -----------------------------------------------------------------------------
 
-(defun parinfer-smart-yank:paren-yank ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-yank:paren-yank ()
   (let ((yank-str nil)
         (m major-mode))
     (with-temp-buffer
@@ -330,9 +325,8 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
      (insert yank-str)
      (parinfer--reindent-sexp))))
 
-(defun parinfer-smart-yank:yank ()
+(parinfer--defcmd parinfer-smart-yank:yank ()
   "Yank behaviour depend on current mode(Indent/Paren)."
-  (interactive)
   (cl-case (parinfer-current-mode)
     (indent (call-interactively 'parinfer-yank))
     (paren (call-interactively 'parinfer-smart-yank:paren-yank))))
@@ -368,8 +362,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
        (not (eq this-command 'parinfer-smart-tab:forward-char-with-indicator))
        (not (eq this-command 'parinfer-smart-tab:backward-char-with-indicator))))
 
-(defun parinfer-smart-tab:clean-indicator-pre ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:clean-indicator-pre ()
   (when (and parinfer-smart-tab:indicator-line
              (parinfer-smart-tab:clean-not-skip-this-command-p))
     (save-excursion
@@ -379,8 +372,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
        (line-end-position)
        '(font-lock-face 'parinfer-smart-tab:indicator-face)))))
 
-(defun parinfer-smart-tab:clean-indicator ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:clean-indicator ()
   (when (and parinfer-smart-tab:indicator-line
              (parinfer-smart-tab:clean-not-skip-this-command-p))
     (if (and (eq (line-number-at-pos) parinfer-smart-tab:indicator-line))
@@ -448,8 +440,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
     (end-of-line)
     (setq deactivate-mark nil)))
 
-(defun parinfer-smart-tab:shift-right ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:shift-right ()
   (if (eq 'indent (parinfer-current-mode))
       (progn
         (parinfer-smart-tab:active-line-region)
@@ -467,8 +458,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
       (setq deactivate-mark t)
       (parinfer--reindent-sexp))))
 
-(defun parinfer-smart-tab:shift-left ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:shift-left ()
   (if (eq 'indent (parinfer-current-mode))
       (progn
         (parinfer-smart-tab:active-line-region)
@@ -537,8 +527,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
           (progn (end-of-line) (backward-char))
         (forward-char current-x)))))
 
-(defun parinfer-smart-tab:forward-char ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:forward-char ()
   (if (and (not (parinfer--in-comment-or-string-p))
            (parinfer--empty-line-p))
       (progn
@@ -558,8 +547,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
           (setq parinfer-smart-tab:indicator-line (line-number-at-pos))))
     (call-interactively 'forward-char)))
 
-(defun parinfer-smart-tab:backward-char ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:backward-char ()
   (if (and (not (parinfer--in-comment-or-string-p))
            (parinfer--empty-line-p))
       (progn
@@ -581,8 +569,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
           (setq parinfer-smart-tab:indicator-line (line-number-at-pos))))
     (call-interactively 'backward-char)))
 
-(defun parinfer-smart-tab:forward-char-with-indicator ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:forward-char-with-indicator ()
   (when (and (not (parinfer--in-comment-or-string-p))
              (parinfer--empty-line-p)
              (not parinfer-smart-tab:indicator-line))
@@ -605,8 +592,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
             (setq forward-count (1+ forward-count)))))
     (call-interactively 'forward-char)))
 
-(defun parinfer-smart-tab:backward-char-with-indicator ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:backward-char-with-indicator ()
   (when (and (not (parinfer--in-comment-or-string-p))
              (parinfer--empty-line-p)
              (not parinfer-smart-tab:indicator-line))
@@ -629,8 +615,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
             (setq backward-count (1+ backward-count)))))
     (call-interactively 'backward-char)))
 
-(defun parinfer-smart-tab:dwim-right-or-complete ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:dwim-right-or-complete ()
   (if (eq 'paren parinfer--state)
       (if (bound-and-true-p company-mode)
           (company-indent-or-complete-common)
@@ -653,8 +638,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
         (call-interactively 'parinfer-smart-tab:shift-right)
         (deactivate-mark))))))
 
-(defun parinfer-smart-tab:dwim-right ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:dwim-right ()
   (if (eq 'paren parinfer--state)
       (indent-according-to-mode)
     (cond
@@ -671,8 +655,7 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
         (call-interactively 'parinfer-smart-tab:shift-right)
         (deactivate-mark))))))
 
-(defun parinfer-smart-tab:dwim-left ()
-  (interactive)
+(parinfer--defcmd parinfer-smart-tab:dwim-left ()
   (when (eq 'indent parinfer--state)
     (cond
      ((region-active-p)
