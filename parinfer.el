@@ -563,7 +563,7 @@ This is the entry point function added to `post-command-hook'."
         (setq deactivate-mark nil)))))
 
 (defun parinfer-mode-enable ()
-  "Enable 'parinfer-mode'."
+  "Enable `parinfer-mode'."
   (setq-mode-local parinfer-mode indent-tabs-mode nil)
   (setq parinfer--last-line-number (line-number-at-pos (point)))
   (add-hook 'post-command-hook 'parinfer--invoke-if-necessary t t)
@@ -572,7 +572,7 @@ This is the entry point function added to `post-command-hook'."
   (run-hooks 'parinfer-mode-enable-hook))
 
 (defun parinfer-mode-disable ()
-  "Disable 'parinfer-mode'."
+  "Disable `parinfer-mode'."
   (remove-hook 'post-command-hook 'parinfer--invoke-if-necessary t)
   (parinfer--extension-lifecycle :unmount)
   (parinfer-region-mode -1)
@@ -767,27 +767,27 @@ major mode rules."
         (parinfer--invoke)))))
 
 (parinfer--defcmd parinfer-backward-kill-word ()
-  "Replacement in symbol 'parinfer-mode' for 'backward-kill-word' command."
+  "Replacement in symbol `parinfer-mode' for `backward-kill-word' command."
   (parinfer-run
    (call-interactively 'backward-kill-word)))
 
 (parinfer--defcmd parinfer-delete-char ()
-  "Replacement in 'parinfer-mode' for 'delete-char' command."
+  "Replacement in `parinfer-mode' for `delete-char' command."
   (parinfer-run
    (delete-char 1)))
 
 (parinfer--defcmd parinfer-kill-word ()
-  "Replacement in 'parinfer-mode' for 'kill-word' command."
+  "Replacement in `parinfer-mode' for `kill-word' command."
   (parinfer-run
    (call-interactively 'kill-word)))
 
 (parinfer--defcmd parinfer-kill-line ()
-  "Replacement in 'parinfer-mode' for 'kill-line' command."
+  "Replacement in `parinfer-mode' for `kill-line' command."
   (parinfer-run
    (call-interactively 'kill-line)))
 
 (parinfer--defcmd parinfer-delete-indentation ()
-  "Replacement in 'parinfer-mode' for 'delete-indentation' command."
+  "Replacement in `parinfer-mode' for `delete-indentation' command."
   (parinfer-paren-run
    (call-interactively 'delete-indentation)))
 
@@ -815,12 +815,12 @@ major mode rules."
   (call-interactively 'mouse-drag-region))
 
 (parinfer--defcmd parinfer-kill-region ()
-  "Replacement in 'parinfer-mode' for 'kill-region' command."
+  "Replacement in `parinfer-mode' for `kill-region' command."
   (parinfer-run
    (call-interactively 'kill-region)))
 
 (parinfer--defcmd parinfer-newline ()
-  "Replacement in 'parinfer-mode' for 'newline' command."
+  "Replacement in `parinfer-mode' for `newline' command."
   (parinfer-do
    (call-interactively 'newline)))
 
