@@ -31,6 +31,7 @@
 
 (require 'parinfer-strategies)
 (require 'parinfer-utils)
+(require 'dash)
 
 ;;;; Work around dependency loop
 (defvar parinfer--delay-timer)
@@ -81,10 +82,10 @@ Usage:
   CLAUSES)
 
 CLAUSES are the code for lifecycle.
-:mount    called when 'parinfer-mode' enabled.
-:unmount  called when 'parinfer-mode' disabled.
-:paren    called when 'parinfer-mode' switch to Paren Mode.
-:indent   called when 'parinfer-mode' switch to Indent Mode."
+:mount    called when `parinfer-mode' is enabled.
+:unmount  called when `parinfer-mode' is disabled.
+:paren    called when switching to Paren Mode.
+:indent   called when switching to Indent Mode."
   (declare (indent 1) (doc-string 2))
   (let* ((alist (parinfer--plist2alist clauses))
          (keys (delete-dups (mapcar #'car alist)))
@@ -177,12 +178,12 @@ Use rainbow-delimiters for Paren Mode, and dim-style parens for Indent Mode."
 ;; defaults
 ;; -----------------------------------------------------------------------------
 
-(defun parinfer-defaults:company-cancel (&ignored)
-  "Invoke when company cancelled, ignore IGNORED."
+(defun parinfer-defaults:company-cancel (_)
+  "Invoke when company cancelled."
   (parinfer-readjust-paren t))
 
-(defun parinfer-defaults:company-finish (&ignored)
-  "Invoke when company finished, ignore IGNORED. "
+(defun parinfer-defaults:company-finish (_)
+  "Invoke when company finished."
   (parinfer--reindent-sexp))
 
 (parinfer-define-extension defaults
