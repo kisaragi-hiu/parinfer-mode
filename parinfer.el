@@ -602,6 +602,20 @@ real line numbers."
                             (line-end-position)))
            (insert (plist-get l :line))))
 
+(defun parinfer--handle-error (err &optional err-line)
+  "Show the appropriate message for ERR.
+ERR is an error object created by `parinferlib--create-error'.
+ERR-LINE is where it happened. If nil, use ERR\\='s `:line-no' instead."
+  (when parinfer-display-error
+    (let ((err-line (or err-line (plist-get err :line-no))))
+      (message "Parinfer error: %s at line/column %s:%s"
+               (plist-get err :message)
+               err-line
+               (save-mark-and-excursion
+                 (parinfer--goto-line err-line)
+                 (forward-char (plist-get err :x))
+                 (current-column))))))
+
 (defun parinfer--readjust-paren-1 (text &optional options)
   "Wrapper around `parinferlib-indent-mode' that deals with tabs correctly.
 
@@ -641,16 +655,16 @@ after `parinfer-delay-invoke-idle' seconds of idle time."
                             :cursor-line cursor-line
                             :preview-cursor-scope parinfer-preview-cursor-scope))
               err (plist-get result :error))
-        (if (and parinfer-display-error err)
-            (let ((err-line (+ (line-number-at-pos start)
-                               (plist-get err :line-no))))
-              (message "Parinfer error: %s at line: %s column:%s"
-                       (plist-get err :message)
-                       err-line
-                       (save-mark-and-excursion
-                         (parinfer--goto-line err-line)
-                         (forward-char (plist-get err :x))
-                         (current-column))))
+        (if err
+            ;; HACK: sometimes TEXT can end up splitting up a string, even
+            ;; though the string is properly closed. This would result in this
+            ;; function failing even though `parinfer-readjust-paren-buffer'
+            ;; succeeds. Just retry.
+            (if (equal (plist-get err :name)
+                       "unclosed-quote")
+                (parinfer-readjust-paren-buffer)
+              (parinfer--handle-error err (+ (line-number-at-pos start)
+                                             (plist-get err :line-no))))
           (when (plist-get result :success)
             (parinfer--apply-result result :offset (line-number-at-pos start))
             (parinfer--goto-line line-number)
@@ -667,12 +681,15 @@ after `parinfer-delay-invoke-idle' seconds of idle time."
                      :cursor-line cursor-line
                      :preview-cursor-scope parinfer-preview-cursor-scope))
          (text (buffer-substring-no-properties (point-min) (point-max)))
-         (result (parinfer--readjust-paren-1 text opts)))
-    (when (plist-get result :success)
-      (parinfer--apply-result result)
-      (parinfer--goto-line (1+ cursor-line))
-      (forward-char (plist-get result :cursor-x))
-      (set-window-start (selected-window) window-start-pos))))
+         (result (parinfer--readjust-paren-1 text opts))
+         (err (plist-get result :error)))
+    (if err
+        (parinfer--handle-error err)
+      (when (plist-get result :success)
+        (parinfer--apply-result result)
+        (parinfer--goto-line (1+ cursor-line))
+        (forward-char (plist-get result :cursor-x))
+        (set-window-start (selected-window) window-start-pos)))))
 
 (defun parinfer--indent-changes ()
   "Does switching to indent state change the buffer?
