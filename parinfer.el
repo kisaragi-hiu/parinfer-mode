@@ -107,7 +107,7 @@ characters have been changed."
   :group 'parinfer
   :type 'number)
 
-(defcustom parinfer-display-error nil
+(defcustom parinfer-display-error t
   "Whether indent state errors should be displayed."
   :group 'parinfer
   :type 'boolean)
