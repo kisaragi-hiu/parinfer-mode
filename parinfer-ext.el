@@ -145,10 +145,11 @@ CLAUSES are the code for lifecycle.
         (font-lock-fontify-buffer)))))
 
 (defface parinfer-pretty-parens:dim-paren-face
-  '((((class color) (background dark))
-     (:foreground "grey40"))
-    (((class color) (background light))
-     (:foreground "grey60")))
+  '((t (:inherit font-lock-comment-face)))
+  ;; '((((class color) (background dark))
+  ;;    (:foreground "grey40"))
+  ;;   (((class color) (background light))
+  ;;    (:foreground "grey60")))
   "Parinfer dim paren face."
   :group 'parinfer-faces)
 
