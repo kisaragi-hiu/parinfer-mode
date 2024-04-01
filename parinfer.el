@@ -511,27 +511,29 @@ This is the entry point function added to `post-command-hook'."
         ((and (bound-and-true-p parinfer-region-mode)
               (not (use-region-p)))
          (parinfer-region-mode -1)))
-  (when (and this-command (symbolp this-command))
-    (if (parinfer--should-clean-up-p)
-        (parinfer--clean-up)
-      (let ((parinfer--ppss (syntax-ppss)))
-        (when (parinfer--should-invoke?)
-          (cond
-           ((parinfer-strategy-match-p this-command :instantly)
-            (parinfer--invoke-immediately (point)))
-           ((parinfer-strategy-match-p this-command :shift-right)
-            (let ((parinfer--state 'indent))
-              (parinfer-readjust-paren))
-            (save-excursion
-              (beginning-of-line)
-              (parinfer-readjust-indent)))
-           ((parinfer-strategy-match-p this-command :default)
-            (parinfer--invoke (point))
-            (unless (parinfer--in-string-p)
-              (setq parinfer--text-modified t)))
-           ;; Do nothing for everything else
-           ;; (despite the name of the "default" strategy)
-           (t nil)))))))
+  (condition-case e
+      (when (and this-command (symbolp this-command))
+        (if (parinfer--should-clean-up-p)
+            (parinfer--clean-up)
+          (let ((parinfer--ppss (syntax-ppss)))
+            (when (parinfer--should-invoke?)
+              (cond
+               ((parinfer-strategy-match-p this-command :instantly)
+                (parinfer--invoke-immediately (point)))
+               ((parinfer-strategy-match-p this-command :shift-right)
+                (let ((parinfer--state 'indent))
+                  (parinfer-readjust-paren))
+                (save-excursion
+                  (beginning-of-line)
+                  (parinfer-readjust-indent)))
+               ((parinfer-strategy-match-p this-command :default)
+                (parinfer--invoke (point))
+                (unless (parinfer--in-string-p)
+                  (setq parinfer--text-modified t)))
+               ;; Do nothing for everything else
+               ;; (despite the name of the "default" strategy)
+               (t nil))))))
+    (error (message "Parinfer error: %s" e))))
 
 (defun parinfer--active-line-region ()
   "Auto adjust region so that the shift can work properly."
