@@ -549,8 +549,8 @@ This is the entry point function added to `post-command-hook'."
     (setq deactivate-mark nil)
     (setq parinfer--region-shifted t)))
 
-(defun parinfer--shift (distance)
-  "Shift text.  For right, DISTANCE > 0, for left, DISTANCE < 0."
+(defun parinfer--shift (chars)
+  "Shift text by CHARS.  For right, CHARS > 0, for left, CHARS < 0."
   (when (use-region-p)
     (when (not parinfer--region-shifted)
       (parinfer--active-line-region))
@@ -558,10 +558,10 @@ This is the entry point function added to `post-command-hook'."
       (save-mark-and-excursion
         (indent-rigidly (region-beginning)
                         (region-end)
-                        distance)
+                        chars)
         (push-mark mark t t)
         (setq parinfer--x-after-shift
-              (+ parinfer--x-after-shift distance))
+              (+ parinfer--x-after-shift chars))
         (setq deactivate-mark nil)))))
 
 (defun parinfer-mode-enable ()
